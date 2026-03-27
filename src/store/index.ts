@@ -116,7 +116,7 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
 // SSE connection manager — true EventSource with auto-reconnect
 // Use current host so it works from any network location
-const SSE_URL = `${window.location.protocol}//${window.location.hostname}:3001/api/dashboard/stream`;
+const SSE_URL = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001/api/dashboard/stream` : 'http://localhost:3001/api/dashboard/stream';
 let eventSource: EventSource | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 5000;

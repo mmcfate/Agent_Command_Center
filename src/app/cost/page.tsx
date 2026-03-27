@@ -382,9 +382,11 @@ export default function CostPage() {
   }, []);
 
   // Poll live data every 30s
+  const BACKEND = typeof window !== 'undefined' ? window.location.protocol + '//' + window.location.hostname + ':3001' : 'http://localhost:3001';
+
   const fetchLive = useCallback(async () => {
     try {
-      const res = await fetch(`${window.location.protocol}//${window.location.hostname}:3001/api/dashboard/cost`);
+      const res = await fetch(`${BACKEND}/api/dashboard/cost`);
       if (res.ok) setData(await res.json());
     } catch (e) {
       console.error("Failed to poll cost data", e);
@@ -401,7 +403,7 @@ export default function CostPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${window.location.protocol}//${window.location.hostname}:3001/api/dashboard/cost/history?hours=${timeRange}`);
+        const res = await fetch(`${BACKEND}/api/dashboard/cost/history?hours=${timeRange}`);
         if (res.ok) {
           const json = await res.json();
           setData((prev) => ({ ...(prev ?? json), ...json }));
