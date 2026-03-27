@@ -103,21 +103,18 @@ function buildChartData(history: HistoryRow[], hours: TimeRange): ChartDataPoint
   const cutoff = now - hours * 3_600_000;
   const rows = history.filter((r) => new Date(r.ts).getTime() >= cutoff);
 
-  let cloudCumulative = 0;
-  let avoidanceCumulative = 0;
-
+  // Each history row already has cumulative cloudCost/avoidance at that point.
+  // cloudCost = running total cloud spend, avoidance = running total avoided cost.
   return rows.map((row) => {
-    cloudCumulative += row.cloudCost;
-    avoidanceCumulative += row.avoidance;
     const d = new Date(row.ts);
     const label = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     return {
       time: label,
       ts: d.getTime(),
-      cloudDelta: row.cloudCost,
-      avoidanceDelta: row.avoidance,
-      cloudCumulative,
-      avoidanceCumulative,
+      cloudDelta: row.cloudCost - (rows[rows.indexOf(row) - 1]?.cloudCost ?? 0),
+      avoidanceDelta: row.avoidance - (rows[rows.indexOf(row) - 1]?.avoidance ?? 0),
+      cloudCumulative: row.cloudCost,
+      avoidanceCumulative: row.avoidance,
     };
   });
 }
