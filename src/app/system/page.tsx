@@ -6,7 +6,13 @@ import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { Server, HardDrive, Wifi, Zap, Activity, Clock, Send, Trash2, Pause, Play, ChevronDown, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
-const API = typeof window !== 'undefined' ? `${window.location.protocol}//${window.location.hostname}:3001` : 'http://localhost:3001';
+const API = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:3001';
+  const proto = window.location.protocol;
+  const host = window.location.hostname;
+  const port = window.location.port === '3000' ? '3001' : (window.location.port || (proto === 'https:' ? '443' : '3001'));
+  return `${proto}//${host}:${port}`;
+})();
 
 const API_ENDPOINTS = [
   "/api/dashboard/agents",

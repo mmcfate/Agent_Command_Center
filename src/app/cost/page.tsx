@@ -382,7 +382,14 @@ export default function CostPage() {
   }, []);
 
   // Poll live data every 30s
-  const BACKEND = typeof window !== 'undefined' ? window.location.protocol + '//' + window.location.hostname + ':3001' : 'http://localhost:3001';
+  // Dynamic backend URL: on port 3000 use 3001, otherwise use same origin (for serve/HTTPS)
+  const BACKEND = (() => {
+    if (typeof window === 'undefined') return 'http://localhost:3001';
+    const proto = window.location.protocol;
+    const host = window.location.hostname;
+    const port = window.location.port === '3000' ? '3001' : (window.location.port || (proto === 'https:' ? '443' : '3001'));
+    return `${proto}//${host}:${port}`;
+  })();
 
   const fetchLive = useCallback(async () => {
     try {
