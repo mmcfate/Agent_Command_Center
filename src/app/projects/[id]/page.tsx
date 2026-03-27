@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useDashboardStore } from "@/store";
 import { Card, CardBody } from "@/components/ui/Card";
 import { TaskDetailModal } from "@/components/ui/TaskDetailModal";
-import { ArrowLeft, Folder, FileText, CheckCircle2, Circle, Clock, User } from "lucide-react";
+import { ArrowLeft, Folder, FileText, CheckCircle2, Circle, Clock, User, ChevronDown } from "lucide-react";
 import type { Task } from "@/types";
 
 const PHASES = ["research", "design", "implement", "self_qc", "qa", "document", "done"] as const;
@@ -37,10 +37,20 @@ export default function ProjectDetailPage() {
   const { projects, tasks } = useDashboardStore();
   const [mounted, setMounted] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [completedTasks, setCompletedTasks] = useState<any[]>([]);
+
+  const projectId = params.id as string;
 
   useEffect(() => { setMounted(true); }, []);
-  
-  const projectId = params.id as string;
+
+  useEffect(() => {
+    if (!showCompleted || completedTasks.length > 0) return;
+    fetch(`/api/tasks-md/${projectId}`)
+      .then(r => r.json())
+      .then(d => setCompletedTasks(d.tasks || []))
+      .catch(() => setCompletedTasks([]));
+  }, [showCompleted, projectId, completedTasks.length]);
   const project = projects.find((p) => p.id === projectId);
   const projectTasks = tasks.filter((t) => t.project === projectId);
 
@@ -144,6 +154,38 @@ export default function ProjectDetailPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Completed Tasks */}
+      <div className="mt-6 border-t" style={{ borderColor: "#2a2a3a" }}>
+        <button
+          onClick={() => setShowCompleted(!showCompleted)}
+          className="flex items-center gap-2 mt-4 text-sm font-medium hover:opacity-80 transition-opacity"
+          style={{ color: "#8888a0" }}
+        >
+          <ChevronDown size={14} className={`transition-transform ${showCompleted ? "rotate-180" : ""}`} />
+          Completed Tasks ({completedTasks.length})
+        </button>
+
+        {showCompleted && completedTasks.length === 0 && (
+          <p className="text-xs italic mt-2" style={{ color: "#8888a0" }}>
+            No completed tasks yet. Move a task to "done" to archive it here.
+          </p>
+        )}
+
+        {showCompleted && completedTasks.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {completedTasks.map((task, i) => (
+              <div key={i} className="flex items-center gap-3 text-xs py-2 px-3 rounded" style={{ backgroundColor: "#1a1a2a" }}>
+                <CheckCircle2 size={12} style={{ color: "#34d399" }} />
+                <span style={{ color: "#f0f0f5" }}>{task.title}</span>
+                <span className="ml-auto text-xs" style={{ color: "#8888a0" }}>
+                  {task.agent} · {task.phase}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Task List */}
