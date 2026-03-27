@@ -126,3 +126,17 @@ See `reports/v0.2.0/future-ideas.md` for planned features:
 - [ ] Advanced Cost Anomaly Detection
 - [ ] Scheduled Cron Job Management UI
 - [ ] Agent-to-Agent Communication Visualizer
+
+---
+
+## [0.4.0] — 2026-03-27
+
+### Added
+- **Settings Page** — New `/settings` page with backend URL configuration, OpenClaw directory, and agent registry display
+- **Backend Config File** — Reads `~/.openclaw/command-center.json` for all paths; falls back to defaults
+- **`/api/settings` Endpoint** — GET/PUT for runtime configuration management
+- **Agent Auto-Discovery** — Frontend proxies `/api/openclaw/config` to discover agents from `openclaw.json`
+
+### Changed
+- **Generalized Backend** — All hardcoded paths (`/home/mmcfate/.openclaw/jarvis_cos`, etc.) replaced with `CONFIG.*` lookups
+- **VERSION Synced** — Updated to 0.3.0 to match CHANGELOG
