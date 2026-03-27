@@ -5,19 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v0.3.1
+## [Unreleased] — v0.4.1
+
+---
+
+## [0.4.0] — 2026-03-27
 
 ### Added
-- **Task Board** — Kanban-style board with 7 phase columns: Research, Design, Implement, Self-QC, QA, Document, Done
-  - Tasks visually move through phase columns as work progresses
-  - Drag-and-drop to advance phases
-  - Automatic TODO.md sync when tasks move
+- **Settings Page** — New `/settings` page with backend URL configuration, OpenClaw directory, and agent registry display
+- **Backend Config File** — Reads `~/.openclaw/command-center.json` for all paths; falls back to defaults
+- **`/api/settings` Endpoint** — GET returns openclawDir, backend config, model config, discovered agents; PUT persists settings
+- **Agent Auto-Discovery** — Backend discovers agents from `openclaw.json` dynamically
 
 ### Changed
-- **TODO.md Integration** — Overview page now reads directly from `~/.openclaw/projects/TODO.md`
-  - Tasks grouped by phase with color-coded badges
-  - Session aliveness indicator (green = active, red = orphaned, gray = pending)
-  - Real-time polling every 30 seconds
+- **Generalized Backend** — All hardcoded paths replaced with dynamic `OPENCLAW_DIR`/`CONFIG.*` lookups
+- **Fixed Hardcoded Paths** — `/home/jarvis/.openclaw` → `/home/mmcfate/.openclaw/jarvis_cos`
 
 ---
 
@@ -113,30 +115,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backend API routes: `/agents`, `/tasks`, `/projects`, `/sessions`, `/crons`, `/system`
 - Overview page loads real data from backend
 - Theme toggle + dark mode foundation
-
----
-
-## Ideas for Future
-
-See `reports/v0.2.0/future-ideas.md` for planned features:
-
-- [ ] Pipelines / DAG View (workflow orchestration)
-- [ ] Voice Chat (full duplex — recording, STT, TTS, ElevenLabs)
-- [ ] Full Chat + File/Image Attachments
-- [ ] Advanced Cost Anomaly Detection
-- [ ] Scheduled Cron Job Management UI
-- [ ] Agent-to-Agent Communication Visualizer
-
----
-
-## [0.4.0] — 2026-03-27
-
-### Added
-- **Settings Page** — New `/settings` page with backend URL configuration, OpenClaw directory, and agent registry display
-- **Backend Config File** — Reads `~/.openclaw/command-center.json` for all paths; falls back to defaults
-- **`/api/settings` Endpoint** — GET/PUT for runtime configuration management
-- **Agent Auto-Discovery** — Frontend proxies `/api/openclaw/config` to discover agents from `openclaw.json`
-
-### Changed
-- **Generalized Backend** — All hardcoded paths (`/home/mmcfate/.openclaw/jarvis_cos`, etc.) replaced with `CONFIG.*` lookups
-- **VERSION Synced** — Updated to 0.3.0 to match CHANGELOG

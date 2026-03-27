@@ -9,67 +9,56 @@ interface Agent {
   role: string;
 }
 
-interface Model {
-  id: string;
-  inputRate: number;
-  outputRate: number;
-  tag: "cloud" | "local";
-}
-
 export default function SettingsPage() {
-  const [backendUrl, setBackendUrl] = useState("");
+  const [backendUrl, setBackendUrl] = useState("http://localhost:3001");
   const [openclawDir, setOpenclawDir] = useState("");
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Auto-detect current backend URL
+  // Load settings on mount
   useEffect(() => {
-    const proto = window.location.protocol === "https:" ? "https:" : "http:";
-    const host = window.location.hostname;
-    const port = window.location.port === "3000" ? "3001" : (window.location.port || "3001");
-    setBackendUrl(`${proto}//${host}:${port}`);
-    
-    // Load saved settings from localStorage
-    const savedSettings = localStorage.getItem("cc-settings");
-    if (savedSettings) {
+    async function loadSettings() {
       try {
-        const parsed = JSON.parse(savedSettings);
-        if (parsed.backendUrl) setBackendUrl(parsed.backendUrl);
-        if (parsed.openclawDir) setOpenclawDir(parsed.openclawDir);
-      } catch {}
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          setOpenclawDir(data.openclawDir || "");
+          setBackendUrl(`http://${data.backend?.host || "localhost"}:${data.backend?.port || 3001}`);
+          setAgents(data.agents || []);
+        }
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      }
+      setLoading(false);
     }
-    
-    // Load agents from backend
-    fetchAgents();
-    setLoading(false);
+    loadSettings();
   }, []);
 
-  async function fetchAgents() {
+  async function saveSettings() {
+    setSaveError("");
     try {
-      const res = await fetch("/api/openclaw/config");
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          openclawDir,
+          backend: {
+            host: backendUrl.replace("http://", "").replace("https://", "").split(":")[0] || "localhost",
+            port: parseInt(backendUrl.split(":")[2]) || 3001
+          }
+        })
+      });
       if (res.ok) {
-        const data = await res.json();
-        // Parse agents from openclaw.json
-        const agentsList = data.agents?.list || [];
-        setAgents(agentsList.map((a: any) => ({
-          id: a.id || "",
-          name: a.name || a.id || "",
-          workspace: a.workspace || "",
-          role: a.role || ""
-        })));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        setSaveError("Failed to save");
       }
     } catch (e) {
-      console.error("Failed to fetch agents", e);
+      setSaveError("Connection error");
     }
-  }
-
-  function saveSettings() {
-    const settings = { backendUrl, openclawDir };
-    localStorage.setItem("cc-settings", JSON.stringify(settings));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   }
 
   if (loading) {
@@ -84,9 +73,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Settings</h1>
-        {saved && (
-          <span className="text-sm text-green-400">Saved!</span>
-        )}
+        {saved && <span className="text-sm text-green-400">Saved!</span>}
+        {saveError && <span className="text-sm text-red-400">{saveError}</span>}
       </div>
 
       {/* Connection Settings */}
@@ -148,7 +136,6 @@ export default function SettingsPage() {
                 <tr className="border-b border-[var(--color-border)]">
                   <th className="text-left py-2 text-[var(--color-text-muted)]">Name</th>
                   <th className="text-left py-2 text-[var(--color-text-muted)]">ID</th>
-                  <th className="text-left py-2 text-[var(--color-text-muted)]">Role</th>
                   <th className="text-left py-2 text-[var(--color-text-muted)]">Workspace</th>
                 </tr>
               </thead>
@@ -157,8 +144,7 @@ export default function SettingsPage() {
                   <tr key={agent.id} className="border-b border-[var(--color-border)] last:border-0">
                     <td className="py-2 text-[var(--color-text)]">{agent.name}</td>
                     <td className="py-2 text-[var(--color-text-muted)] font-mono">{agent.id}</td>
-                    <td className="py-2 text-[var(--color-text)]">{agent.role || "—"}</td>
-                    <td className="py-2 text-[var(--color-text-muted)] font-mono text-xs truncate max-w-[200px]">
+                    <td className="py-2 text-[var(--color-text-muted)] font-mono text-xs truncate max-w-[250px]" title={agent.workspace}>
                       {agent.workspace}
                     </td>
                   </tr>
@@ -170,17 +156,6 @@ export default function SettingsPage() {
         <p className="text-xs text-[var(--color-text-muted)] mt-3">
           Agents are automatically discovered from your openclaw.json configuration
         </p>
-      </div>
-
-      {/* Model Config */}
-      <div className="bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] p-4">
-        <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">Model Pricing</h2>
-        <p className="text-sm text-[var(--color-text-muted)]">
-          Model cost configuration. Rates are per 1M tokens.
-        </p>
-        <div className="mt-3 text-sm text-[var(--color-text-muted)]">
-          Configure model rates in the Cost Dashboard settings panel.
-        </div>
       </div>
     </div>
   );

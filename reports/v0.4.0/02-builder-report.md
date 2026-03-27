@@ -3,42 +3,43 @@
 ## What
 Settings page + backend generalization. Makes the Command Center configurable for any user's OpenClaw setup.
 
-## Why
-Previously hardcoded to Marlin's specific paths, models, and agents. Not portable.
+## Changes Made
 
-## How
-- Settings page at `/settings` with localStorage-persisted configuration
-- Backend config file at `~/.openclaw/command-center.json`
-- Agent auto-discovery from `openclaw.json` via `/api/openclaw/config` proxy
+### Backend (`dashboard/backend/server.js`)
+- Added `~/.openclaw/command-center.json` config file support
+- Added `GET /api/settings` — returns openclawDir, backend config, model config, discovered agents
+- Added `PUT /api/settings` — persists settings to config file
+- Added `getOpenclawDir()`, `getAgentWorkspace()`, `getModelConfig()` helper functions
+- Added `const OPENCLAW_DIR` and `PROJECTS_DIR` constants (fixes missing definitions)
+- Fixed hardcoded paths (`/home/jarvis/.openclaw` → `/home/mmcfate/.openclaw/jarvis_cos`)
+- Agent discovery reads from `openclaw.json` dynamically (no hardcoded agent list)
 
-## Changes
-### Frontend
-- `src/app/settings/page.tsx` — new Settings page
-- `src/app/api/openclaw/config/route.ts` — API proxy for agent discovery
+### Frontend (`src/app/settings/`)
+- New Settings page at `/settings`
+- Shows current Backend URL, OpenClaw Directory
+- Shows auto-discovered agent registry (name, ID, workspace) from backend
+- Save button writes to `~/.openclaw/command-center.json` via backend API
 
-### Backend (server.js)
-- Config loading at startup from `~/.openclaw/command-center.json`
-- All hardcoded paths replaced with `CONFIG.*` lookups
-- `/api/settings` GET/PUT endpoints
+### API Proxy (`src/app/api/settings/`)
+- `GET /api/settings` — proxies to backend
+- `PUT /api/settings` — proxies to backend
 
-### Config defaults (when no command-center.json exists)
-- `openclawDir`: `~/.openclaw`
-- `jarvisWorkspace`: `~/.openclaw/workspace-jarvis`
-- `bonnieWorkspace`: `~/.openclaw/workspace-bonnie`
-- `memoryDir`: `~/.openclaw/memory`
-- `dashboardDir`: `~/dashboards/Jarvis_dashboard/dashboard`
-- `dtsDir`: `~/DTS`
-
-## Testing
-- Settings page loads ✅
-- Backend URL configurable ✅
-- OpenClaw dir configurable ✅
-- Agent registry auto-discovered (3 agents: main, jarvis, bonnie) ✅
-- Save button works ✅
-- No console errors ✅
-
-## QA
-- Bonnie: PASS (all checks green)
+### Frontend (`src/app/api/openclaw/config/route.ts`)
+- New proxy for `/api/openclaw/config` to support Settings page agent display
 
 ## Screenshots
-Saved to `~/.openclaw/workspace-bonnie/.qa-screenshots/v0.4.0/`
+Saved to `~/.openclaw/workspace-bonnie/.qa-screenshots/v0.4.0/`:
+- `settings-mobile.png` (375×812)
+- `settings-tablet.png` (768×1024)
+- `settings-desktop.png` (1920×1080)
+
+## Testing
+- Backend API: `GET /api/settings` returns 3 agents discovered from openclaw.json
+- Backend API: `PUT /api/settings` persists to `~/.openclaw/command-center.json`
+- Frontend: Settings page loads at all viewports, shows agents, saves settings
+
+## Remaining Hardcoded Paths
+The backend still has some hardcoded paths in cost tracking and session parsing sections. These are lower priority and can be generalized in a follow-up if needed. The critical paths (workspace, config, memory) are now dynamic.
+
+## Version
+This is v0.4.0 — bump VERSION and CHANGELOG before PR.
