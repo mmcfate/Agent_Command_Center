@@ -30,6 +30,10 @@ interface HistoryRow {
   localTokens: number;
   cloudCost: number;
   avoidance: number;
+  totalCloudTokens?: number;
+  totalLocalTokens?: number;
+  totalCloudCost?: number;
+  totalAvoidance?: number;
   gpus: GPU[];
 }
 
@@ -103,18 +107,19 @@ function buildChartData(history: HistoryRow[], hours: TimeRange): ChartDataPoint
   const cutoff = now - hours * 3_600_000;
   const rows = history.filter((r) => new Date(r.ts).getTime() >= cutoff);
 
-  // Each history row already has cumulative cloudCost/avoidance at that point.
-  // cloudCost = running total cloud spend, avoidance = running total avoided cost.
+  // Each history row now has cloudCost/avoidance as DELTA for this interval
+  // AND totalCloudCost/totalAvoidance as never-reset running totals.
+  // Use totalCloudCost directly for cumulative chart (no double-accumulation).
   return rows.map((row) => {
     const d = new Date(row.ts);
     const label = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     return {
       time: label,
       ts: d.getTime(),
-      cloudDelta: row.cloudCost - (rows[rows.indexOf(row) - 1]?.cloudCost ?? 0),
-      avoidanceDelta: row.avoidance - (rows[rows.indexOf(row) - 1]?.avoidance ?? 0),
-      cloudCumulative: row.cloudCost,
-      avoidanceCumulative: row.avoidance,
+      cloudDelta: row.cloudCost ?? 0,
+      avoidanceDelta: row.avoidance ?? 0,
+      cloudCumulative: row.totalCloudCost ?? 0,
+      avoidanceCumulative: row.totalAvoidance ?? 0,
     };
   });
 }
