@@ -1,0 +1,7 @@
+{
+  "name": "cc-workflow-qa",
+  "version": "0.2.1",
+  "description": "Bonnie QA workflow: receive tasks from Jarvis, verify builds, report bugs, sign off on releases.",
+  "author": "marlin",
+  "type": "qa"
+}

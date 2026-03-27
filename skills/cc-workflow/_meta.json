@@ -1,0 +1,7 @@
+{
+  "name": "cc-workflow",
+  "version": "0.3.1",
+  "description": "Jarvis + Bonnie development workflow: research → design → build → QA → document. Self-orchestrating multi-agent development for Chief of Staff and QA team.",
+  "author": "marlin",
+  "type": "orchestration"
+}
