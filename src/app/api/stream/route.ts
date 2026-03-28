@@ -14,25 +14,24 @@ async function safeFetch(url: string) {
 
 export async function GET() {
   try {
-    const [agents, tasks, projects, sessions, crons, system] = await Promise.all([
-      safeFetch(`${BACKEND}/api/dashboard/agents`),
-      safeFetch(`${BACKEND}/api/dashboard/tasks`),
-      safeFetch(`${BACKEND}/api/dashboard/projects`),
-      safeFetch(`${BACKEND}/api/dashboard/sessions`),
-      safeFetch(`${BACKEND}/api/dashboard/crons`),
-      safeFetch(`${BACKEND}/api/dashboard/system`),
+    const [agents, sessions, crons, system, todoData] = await Promise.all([
+      safeFetch(`${BACKEND}/api/agents`),
+      safeFetch(`${BACKEND}/api/openclaw/sessions`),
+      safeFetch(`${BACKEND}/api/cron`),
+      safeFetch(`${BACKEND}/api/system/all`),
+      safeFetch(`${BACKEND}/api/todo`),
     ]);
 
     return NextResponse.json({
       type: "snapshot",
       payload: {
         agents: agents || [],
-        tasks: tasks || [],
-        projects: projects || [],
         sessions: sessions || [],
         crons: crons || [],
         system: system || null,
-        orphanAlerts: (tasks || []).filter((t: any) => t.status === "orphaned"),
+        projects: todoData?.projects || [],
+        tasks: [],
+        orphanAlerts: [],
       },
     });
   } catch {

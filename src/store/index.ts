@@ -118,11 +118,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 // Use current host so it works from any network location
 // When accessed via a proxy/serve URL (https://...), use relative path to same origin
 const SSE_URL = (() => {
-  if (typeof window === 'undefined') return 'http://localhost:3001/api/dashboard/stream';
+  if (typeof window === 'undefined') return 'http://localhost:3001/api/stream';
   const proto = window.location.protocol === 'https:' ? 'https:' : window.location.protocol;
   const host = window.location.hostname;
   const port = window.location.port || (proto === 'https:' ? '443' : '3001');
-  return `${proto}//${host}:${port}/api/dashboard/stream`;
+  return `${proto}//${host}:${port}/api/stream`;
 })();
 let eventSource: EventSource | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
