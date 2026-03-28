@@ -5,7 +5,11 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { FileText, MemoryStick, Clock, Search, Download, ChevronRight } from "lucide-react";
 
-const API = 'http://localhost:3001';
+// Backend URL — use same host as the page (works locally or via Tailscale)
+const API = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:3001';
+  return `http://${window.location.hostname}:3001`;
+})();
 
 type Tab = "overview" | "files" | "memory" | "sessions";
 

@@ -382,8 +382,11 @@ export default function CostPage() {
   }, []);
 
   // Poll live data every 30s
-  // Backend URL — local only
-  const BACKEND = 'http://localhost:3001';
+  // Backend URL — use same host as the page (works locally or via Tailscale)
+  const BACKEND = (() => {
+    if (typeof window === 'undefined') return 'http://localhost:3001';
+    return `http://${window.location.hostname}:3001`;
+  })();
 
   const fetchLive = useCallback(async () => {
     try {

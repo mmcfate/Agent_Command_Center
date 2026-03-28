@@ -114,8 +114,11 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   setConnected: (v) => set({ isConnected: v }),
 }));
 
-// SSE connection manager — local backend only
-const SSE_URL = 'http://localhost:3001/api/dashboard/stream';
+// SSE connection — use same host as the page (works locally or via Tailscale)
+const SSE_URL = (() => {
+  if (typeof window === 'undefined') return 'http://localhost:3001/api/dashboard/stream';
+  return `http://${window.location.hostname}:3001/api/dashboard/stream`;
+})();
 let eventSource: EventSource | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let reconnectDelay = 5000;
