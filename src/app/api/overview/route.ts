@@ -44,7 +44,7 @@ function reshapeAgent(raw: any) {
 export async function GET() {
   try {
     const [rawAgents, sessions, crons, dashSystem, todoData] = await Promise.all([
-      safeFetch(`${BACKEND}/api/agents`),
+      safeFetch(`${BACKEND}/api/dashboard/agents`),
       safeFetch(`${BACKEND}/api/openclaw/sessions`),
       safeFetch(`${BACKEND}/api/cron`),
       safeFetch(`${BACKEND}/api/dashboard/system`),
