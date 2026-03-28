@@ -304,12 +304,12 @@ export default function OverviewPage() {
     fetch("/api/overview")
       .then((r) => r.json())
       .then((data) => {
-        useDashboardStore.getState().setAll(data);
+        setAll(data);
       })
       .catch((e) => console.error("Overview fetch failed:", e));
 
     // Connect SSE stream (defensive — don't let SSE errors crash the page)
-    let disconnect;
+    let disconnect: (() => void) | undefined;
     try {
       disconnect = connectStream();
     } catch (e) {
