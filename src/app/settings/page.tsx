@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // Load settings on mount
   useEffect(() => {
@@ -27,9 +28,12 @@ export default function SettingsPage() {
           setOpenclawDir(data.openclawDir || "");
           setBackendUrl(`http://${data.backend?.host || "localhost"}:${data.backend?.port || 3001}`);
           setAgents(data.agents || []);
+        } else {
+          setLoadError(`API returned ${res.status}`);
         }
       } catch (e) {
-        console.error("Failed to load settings", e);
+        setLoadError("Failed to load settings");
+        console.error("Settings load error", e);
       }
       setLoading(false);
     }
@@ -75,6 +79,7 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-bold text-[var(--color-text)]">Settings</h1>
         {saved && <span className="text-sm text-green-400">Saved!</span>}
         {saveError && <span className="text-sm text-red-400">{saveError}</span>}
+        {loadError && <span className="text-sm text-red-400">Load error: {loadError}</span>}
       </div>
 
       {/* Connection Settings */}
