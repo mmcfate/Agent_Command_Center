@@ -1,18 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useDashboardStore } from "@/store";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Sparkline } from "@/components/ui/Sparkline";
 import { Server, HardDrive, Wifi, Zap, Activity, Clock, Send, Trash2, Pause, Play, ChevronDown, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
-const API = (() => {
-  if (typeof window === 'undefined') return 'http://localhost:3001';
-  const proto = window.location.protocol;
-  const host = window.location.hostname;
-  const port = window.location.port === '3000' ? '3001' : (window.location.port || (proto === 'https:' ? '443' : '3001'));
-  return `${proto}//${host}:${port}`;
-})();
+const API = "http://localhost:3001";
 
 const API_ENDPOINTS = [
   "/api/dashboard/agents",
@@ -22,15 +15,28 @@ const API_ENDPOINTS = [
   "/api/dashboard/crons",
   "/api/dashboard/system",
   "/api/dashboard/overview",
-  "/api/dashboard/agents/jarvis/files",
-  "/api/dashboard/agents/jarvis/memory",
-  "/api/dashboard/agents/jarvis/sessions",
 ];
 
+// ============ Types ============
+interface SystemData {
+  gateway: { online: boolean; version: string; uptime: number; latencyMs: number };
+  backend: { online: boolean; latencyMs: number };
+  services: Array<{ name: string; port: number; online: boolean }>;
+  cpu: number;
+  ram: number;
+  disk: number;
+}
+
 // ============ Gateway Card ============
-function GatewayCard() {
-  const { system } = useDashboardStore();
-  if (!system) return null;
+function GatewayCard({ sys }: { sys: SystemData | null }) {
+  if (!sys) return (
+    <Card>
+      <CardHeader title="Gateway" icon={<Server size={14} />} />
+      <CardBody className="space-y-2">
+        <p className="text-xs italic" style={{ color: "#8888a0" }}>Loading...</p>
+      </CardBody>
+    </Card>
+  );
 
   return (
     <Card>
@@ -39,24 +45,24 @@ function GatewayCard() {
         <div className="flex items-center justify-between">
           <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Status</span>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: system.gateway.online ? "#34d399" : "#f87171" }} />
-            <span className="text-xs font-medium" style={{ color: system.gateway.online ? "#34d399" : "#f87171" }}>
-              {system.gateway.online ? "Online" : "Offline"}
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: sys.gateway.online ? "#34d399" : "#f87171" }} />
+            <span className="text-xs font-medium" style={{ color: sys.gateway.online ? "#34d399" : "#f87171" }}>
+              {sys.gateway.online ? "Online" : "Offline"}
             </span>
           </div>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Version</span>
-          <span className="text-xs" style={{ color: "var(--color-text)" }}>{system.gateway.version || "—"}</span>
+          <span className="text-xs" style={{ color: "var(--color-text)" }}>{sys.gateway.version || "—"}</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Latency</span>
-          <span className="text-xs" style={{ color: "var(--color-text)" }}>{system.gateway.latencyMs}ms</span>
+          <span className="text-xs" style={{ color: "var(--color-text)" }}>{sys.gateway.latencyMs}ms</span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>Uptime</span>
           <span className="text-xs" style={{ color: "var(--color-text)" }}>
-            {system.gateway.uptime > 0 ? `${Math.floor(system.gateway.uptime / 3600)}h ${Math.floor((system.gateway.uptime % 3600) / 60)}m` : "—"}
+            {sys.gateway.uptime > 0 ? `${Math.floor(sys.gateway.uptime / 3600)}h ${Math.floor((sys.gateway.uptime % 3600) / 60)}m` : "—"}
           </span>
         </div>
       </CardBody>
@@ -82,14 +88,18 @@ function ServiceRow({ service }: { service: any }) {
   );
 }
 
-function ServicesCard() {
-  const { system } = useDashboardStore();
-  if (!system) return null;
+function ServicesCard({ sys }: { sys: SystemData | null }) {
+  if (!sys) return (
+    <Card>
+      <CardHeader title="Services" icon={<Wifi size={14} />} />
+      <CardBody className="p-0 px-4"><p className="text-xs italic p-4" style={{ color: "#8888a0" }}>Loading...</p></CardBody>
+    </Card>
+  );
   return (
     <Card>
       <CardHeader title="Services" icon={<Wifi size={14} />} />
       <CardBody className="p-0 px-4">
-        {system.services.map((svc) => <ServiceRow key={svc.port} service={svc} />)}
+        {sys.services.map((svc) => <ServiceRow key={svc.port} service={svc} />)}
       </CardBody>
     </Card>
   );
@@ -110,75 +120,30 @@ function MetricBar({ label, value, color }: { label: string; value: number; colo
   );
 }
 
-function SystemMetricsCard() {
-  const system = useDashboardStore((s) => s.system);
-  const hist = useDashboardStore((s) => s.systemHistory);
-  if (!system) return null;
+function SystemMetricsCard({ sys }: { sys: SystemData | null }) {
+  const getColor = (v: number) => v > 85 ? "#f87171" : v > 70 ? "#fbbf24" : "#34d399";
 
-  const getColor = (v: number) =>
-    v > 85 ? "#f87171" : v > 70 ? "#fbbf24" : "#34d399";
+  if (!sys) return (
+    <Card>
+      <CardHeader title="Host Metrics" icon={<HardDrive size={14} />} />
+      <CardBody><p className="text-xs italic" style={{ color: "#8888a0" }}>Loading...</p></CardBody>
+    </Card>
+  );
 
   return (
     <Card>
       <CardHeader title="Host Metrics" icon={<HardDrive size={14} />} />
       <CardBody className="space-y-4">
-        {/* CPU row */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <MetricBar label="CPU" value={system.cpu} color={getColor(system.cpu)} />
-          </div>
-          <Sparkline data={hist.cpu} color={getColor(system.cpu)} width={100} height={32} />
-        </div>
-        {/* RAM row */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <MetricBar label="RAM" value={system.ram} color={getColor(system.ram)} />
-          </div>
-          <Sparkline data={hist.ram} color={getColor(system.ram)} width={100} height={32} />
-        </div>
-        {/* Disk row */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <MetricBar label="Disk" value={system.disk} color={getColor(system.disk)} />
-          </div>
-          <Sparkline data={hist.disk} color={getColor(system.disk)} width={100} height={32} />
-        </div>
-        {/* GPU rows */}
-        {hist.gpus.map((g) => {
-          const memTotal = g.memTotal[0] || 1;
-          const latestMemPct = g.memUsed.length > 0
-            ? Math.round((g.memUsed[g.memUsed.length - 1] / memTotal) * 100)
-            : 0;
-          const memUsed = g.memUsed[g.memUsed.length - 1] || 0;
-          const gpuData = g.memUsed.map((v, idx) =>
-            Math.round((v / (g.memTotal[0])) * 100)
-          );
-          return (
-            <div key={g.id} className="flex items-center justify-between gap-3">
-              <div className="space-y-1 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium" style={{ color: "var(--color-text)" }}>
-                    GPU {g.id} <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>({g.name})</span>
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
-                    {memUsed}MiB / {memTotal}MiB
-                  </span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "var(--color-bg-elevated)" }}>
-                  <div className="h-full rounded-full transition-all" style={{ backgroundColor: getColor(latestMemPct), width: `${latestMemPct}%` }} />
-                </div>
-              </div>
-              <Sparkline data={gpuData} color={getColor(latestMemPct)} width={100} height={32} />
-            </div>
-          );
-        })}
+        <MetricBar label="CPU" value={sys.cpu} color={getColor(sys.cpu)} />
+        <MetricBar label="RAM" value={sys.ram} color={getColor(sys.ram)} />
+        <MetricBar label="Disk" value={sys.disk} color={getColor(sys.disk)} />
       </CardBody>
     </Card>
   );
 }
+
 // ============ Crons Card ============
-function CronsCard() {
-  const { crons } = useDashboardStore();
+function CronsCard({ crons }: { crons: Array<{ id: string; name: string; schedule: string; status: string }> }) {
   return (
     <Card>
       <CardHeader title="Cron Jobs" icon={<Clock size={14} />} />
@@ -424,24 +389,34 @@ function LiveLogsCard() {
 
 // ============ Main Page ============
 export default function SystemPage() {
+  const [sys, setSys] = useState<SystemData | null>(null);
+  const [crons, setCrons] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${API}/api/dashboard/system`)
+      .then(r => r.json())
+      .then(d => setSys(d))
+      .catch(() => {});
+    fetch(`${API}/api/dashboard/crons`)
+      .then(r => r.json())
+      .then(d => setCrons(d || []))
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold" style={{ color: "var(--color-text)" }}>System Diagnostics</h1>
+        <h1 className="text-xl font-semibold" style={{ color: "#f0f0f5" }}>System</h1>
       </div>
 
-      {/* Top row: existing cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <GatewayCard />
-        <ServicesCard />
-        <SystemMetricsCard />
-        <CronsCard />
+        <GatewayCard sys={sys} />
+        <ServicesCard sys={sys} />
+        <SystemMetricsCard sys={sys} />
+        <CronsCard crons={crons} />
       </div>
 
-      {/* Live Logs — full width */}
       <LiveLogsCard />
-
-      {/* API Tester — below Live Logs */}
       <ApiTesterCard />
     </div>
   );
