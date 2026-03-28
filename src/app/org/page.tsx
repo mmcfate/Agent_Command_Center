@@ -1,10 +1,12 @@
 "use client";
 
-import { useDashboardStore } from "@/store";
-import { Card, CardHeader, CardBody } from "@/components/ui/Card";
-import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { useState, useEffect, useRef } from "react";
+import { useDashboardStore } from "@/store";
+import { Card, CardBody } from "@/components/ui/Card";
+import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import Link from "next/link";
+
+const BACKEND = "http://localhost:3001";
 
 function MarlinNode() {
   return (
@@ -77,10 +79,29 @@ function getAgentStatusColor(status: string) {
 }
 
 export default function OrgPage() {
-  const { agents } = useDashboardStore();
+  // Local state — self-sufficient, doesn't need overview page to load first
+  const [agents, setAgents] = useState<any[]>([]);
+  const storeAgents = useDashboardStore((s) => s.agents);
   const svgRef = useRef<SVGSVGElement>(null);
   const [mounted, setMounted] = useState(false);
   const [dims, setDims] = useState({ width: 800, height: 300 });
+
+  // Fetch agents on mount
+  useEffect(() => {
+    fetch(`${BACKEND}/api/dashboard/agents`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setAgents(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Subscribe to store changes for live updates (SSE-driven)
+  useEffect(() => {
+    if (storeAgents.length > 0) {
+      setAgents(storeAgents);
+    }
+  }, [storeAgents]);
 
   useEffect(() => {
     setMounted(true);
@@ -138,22 +159,18 @@ export default function OrgPage() {
                 const startX = (dims.width - totalWidth) / 2;
                 const agentX = startX + i * AGENT_SPREAD;
                 const color = getAgentStatusColor(agent.status);
-                // Vertical line from Marlin down to agent row
                 return (
                   <g key={agent.id}>
-                    {/* Main vertical trunk */}
                     <line
                       x1={MARLIN_X} y1={MARLIN_Y + 50}
                       x2={agentX} y2={AGENT_Y - 20}
                       stroke={color} strokeWidth={2} strokeOpacity={0.4}
                     />
-                    {/* Horizontal bus from Marlin */}
                     <line
                       x1={MARLIN_X} y1={MARLIN_Y + 50}
                       x2={MARLIN_X} y2={AGENT_Y - 20}
                       stroke={color} strokeWidth={2} strokeOpacity={0.2}
                     />
-                    {/* Agent connection dot */}
                     <circle cx={agentX} cy={AGENT_Y - 20} r={3} fill={color} />
                   </g>
                 );
@@ -169,28 +186,25 @@ export default function OrgPage() {
                 paddingTop: dims.height - 60,
               }}
             >
-              {mounted && agents.map((agent, i) => {
-                return (
-                  <div
-                    key={agent.id}
-                    className="w-48"
-                    style={{
-                      position: "absolute",
-                      left: "50%",
-                      marginLeft: ((agents.length - 1) * AGENT_SPREAD) / -2 + i * AGENT_SPREAD,
-                      top: AGENT_Y - 60,
-                      transform: "translateX(-50%)",
-                    }}
-                  >
-                    <AgentNode agent={agent} />
-                  </div>
-                );
-              })}
+              {mounted && agents.map((agent, i) => (
+                <div
+                  key={agent.id}
+                  className="w-48"
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    marginLeft: ((agents.length - 1) * AGENT_SPREAD) / -2 + i * AGENT_SPREAD,
+                    top: AGENT_Y - 60,
+                    transform: "translateX(-50%)",
+                  }}
+                >
+                  <AgentNode agent={agent} />
+                </div>
+              ))}
             </div>
           </CardBody>
         </Card>
 
-        {/* Agent detail legend */}
         <div className="text-xs" style={{ color: "var(--color-text-secondary)" }}>
           Click any agent to open their detail panel. Status updates in real-time via SSE.
         </div>
