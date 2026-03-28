@@ -1,13 +1,40 @@
 "use client";
 
-import { useEffect } from "react";
-import { useDashboardStore } from "@/store";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardBody } from "@/components/ui/Card";
 import { Folder, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 
+const BACKEND = "http://localhost:3001";
+
+interface Project {
+  id: string;
+  name: string;
+  description?: string;
+  plan?: string;
+  taskCount: { total: number; done: number };
+  lastActivity?: string;
+}
+
 export default function ProjectsPage() {
-  const { projects } = useDashboardStore();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${BACKEND}/api/dashboard/projects`)
+      .then(r => r.json())
+      .then(d => { setProjects(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <h1 className="text-xl font-semibold" style={{ color: "#f0f0f5" }}>Projects</h1>
+        <p className="text-sm italic" style={{ color: "#8888a0" }}>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

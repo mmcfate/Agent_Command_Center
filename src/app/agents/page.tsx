@@ -1,22 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useDashboardStore } from "@/store";
+import { useState, useEffect } from "react";
 import { Card, CardBody } from "@/components/ui/Card";
 import { StatusIndicator } from "@/components/ui/StatusIndicator";
 import { AgentDetailPanel } from "@/components/agents/AgentDetailPanel";
 import { X, Cpu, Clock, Activity, Zap } from "lucide-react";
 
+const BACKEND = "http://localhost:3001";
+
+type AgentStatus = 'online' | 'offline' | 'idle' | 'working';
+
+interface Agent {
+  id: string;
+  name: string;
+  emoji: string;
+  role: string;
+  status: AgentStatus;
+  currentTask?: string;
+  loadedSkill?: string;
+  sessionId?: string;
+  lastActive?: string;
+}
+
 export default function AgentsPage() {
-  const { agents } = useDashboardStore();
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
-  const statusColors: Record<string, string> = {
-    online: "#34d399",
-    working: "#fbbf24",
-    idle: "#8888a0",
-    offline: "#4a4a5a",
-  };
+  useEffect(() => {
+    fetch(`${BACKEND}/api/dashboard/agents`)
+      .then(r => r.json())
+      .then(d => { setAgents(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
 
   const statusLabels: Record<string, string> = {
     online: "Online",
@@ -24,6 +40,14 @@ export default function AgentsPage() {
     idle: "Idle",
     offline: "Offline",
   };
+
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <p className="text-sm italic" style={{ color: "#8888a0" }}>Loading agents...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex" style={{ gap: "var(--space-4, 16px)" }}>
