@@ -215,10 +215,10 @@ function SystemHealthCard() {
           <div className="flex items-center gap-1.5">
             <span
               className="w-1.5 h-1.5 rounded-full"
-              style={{ backgroundColor: system.gateway.online ? "#34d399" : "#f87171" }}
+              style={{ backgroundColor: system.gateway?.online ? "#34d399" : "#f87171" }}
             />
             <span className="text-xs" style={{ color: "#f0f0f5" }}>
-              {system.gateway.online ? `Online (${system.gateway.version || "?"})` : "Offline"}
+              {system.gateway?.online ? `Online (${system.gateway?.version || "?"})` : "Offline"}
             </span>
           </div>
         </div>
