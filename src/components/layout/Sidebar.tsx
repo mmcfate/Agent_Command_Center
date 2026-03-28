@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Settings,
   GitBranch,
   Users,
   FolderKanban,
@@ -15,6 +16,7 @@ import {
 
 const navItems = [
   { href: "/overview", label: "Overview", icon: LayoutDashboard },
+  { href: "/settings", label: "Settings", icon: Settings },
   { href: "/workflow", label: "Workflow", icon: GitBranch },
   { href: "/agents", label: "Agents", icon: Users },
   { href: "/cost", label: "Cost", icon: DollarSign },
