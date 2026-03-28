@@ -300,14 +300,23 @@ export default function OverviewPage() {
   const { setAll, agents } = useDashboardStore();
 
   useEffect(() => {
+    // Fetch initial data
     fetch("/api/overview")
       .then((r) => r.json())
-      .then((data) => useDashboardStore.getState().setAll(data))
-      .catch(console.error);
+      .then((data) => {
+        useDashboardStore.getState().setAll(data);
+      })
+      .catch((e) => console.error("Overview fetch failed:", e));
 
-    const disconnect = connectStream();
-    return () => disconnect();
-  }, [setAll]);
+    // Connect SSE stream (defensive — don't let SSE errors crash the page)
+    let disconnect;
+    try {
+      disconnect = connectStream();
+    } catch (e) {
+      console.error("SSE connection failed:", e);
+    }
+    return () => { if (disconnect) disconnect(); };
+  }, []);
 
   return (
     <div className="space-y-6 animate-fade-in">
